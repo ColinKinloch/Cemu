@@ -316,25 +316,44 @@ SwapchainInfoVk::SwapchainSupportDetails SwapchainInfoVk::QuerySwapchainSupport(
 
 VkSurfaceFormatKHR SwapchainInfoVk::ChooseSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& formats) const
 {
+	bool useSRGB = mainWindow ? LatteGPUState.tvBufferUsesSRGB : LatteGPUState.drcBufferUsesSRGB;
+
+	printf("mainWindow = %s, useSRGB = %s\n", mainWindow ? "true" : "false", useSRGB ? "true" : "false");
+
 	if (formats.size() == 1 && formats[0].format == VK_FORMAT_UNDEFINED)
-		return{ VK_FORMAT_B8G8R8A8_UNORM, VK_COLOR_SPACE_SRGB_NONLINEAR_KHR };
+		if (useSRGB)
+		{
+			printf("undefined, VK_FORMAT_B8G8R8A8_SRGB\n");
+			return{ VK_FORMAT_B8G8R8A8_SRGB, VK_COLOR_SPACE_SRGB_NONLINEAR_KHR };
+		}
+		else
+		{
+			printf("undefined, VK_FORMAT_B8G8R8A8_UNORM\n");
+			return{ VK_FORMAT_B8G8R8A8_UNORM, VK_COLOR_SPACE_SRGB_NONLINEAR_KHR };
+		}
 
 	for (const auto& format : formats)
 	{
-		bool useSRGB = mainWindow ? LatteGPUState.tvBufferUsesSRGB : LatteGPUState.drcBufferUsesSRGB;
-
+		printf("format %d, %d\n", format.format, format.colorSpace);
 		if (useSRGB)
 		{
 			if (format.format == VK_FORMAT_B8G8R8A8_SRGB && format.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR)
+			{
+				printf("selected\n");
 				return format;
+			}
 		}
 		else
 		{
 			if (format.format == VK_FORMAT_B8G8R8A8_UNORM && format.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR)
+			{
+				printf("selected\n");
 				return format;
+			}
 		}
 	}
 
+	printf("wildcard %d, %d\n", formats[0].format, formats[0].colorSpace);
 	return formats[0];
 }
 
